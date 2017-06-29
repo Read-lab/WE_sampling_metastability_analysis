@@ -1,4 +1,4 @@
-function General_trans_051117_NANOG_HPC_fullspec_f50_full_parallel(vorloops,loops2,temp_save_location,num_nodes,ReplicasRequired,name,tau,tau_name,final_save_location,species,bash_clump,rstart)
+function General_trans_051117_NANOG_HPC_fullspec_f50_full_parallel(vorloops,loops2,temp_save_location,num_nodes,ReplicasRequired,name,tau,tau_name,final_save_location,vor_init,curr_iteration,species,bash_clump,rstart,full_restart,eigv)
 loops2 = str2double(loops2);
 num_nodes = str2double(num_nodes);
 ReplicasRequired = str2double(ReplicasRequired);
@@ -7,15 +7,19 @@ species = str2double(species);
 bash_clump = str2double(bash_clump);
 vorloops = str2double(vorloops);
 tic = cputime;
+curr_iteration = str2double(curr_iteration);
 rstart = str2double(rstart);
+full_restart = str2double(full_restart);
+
 save_location = [final_save_location '/trans_' name '_tau' tau_name '.mat'];
 temp_dir_transition = [final_save_location '/trans_' name '_tau' tau_name '/'];
 if not(exist(temp_dir_transition))
     mkdir(temp_dir_transition);
 end
-curr_iteration = 0;
-previous_BNG_dir = [temp_save_location '/t' num2str(curr_iteration)];
 
+previous_BNG_dir = [temp_save_location '/t' num2str(curr_iteration)];
+load(vor_init);
+load(eigv);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -34,85 +38,23 @@ end
 
 
 cd(temp_save_location);
+if full_restart==1
 trans_matrix_prob = zeros(num_nodes);
+end
 prob  = zeros(num_nodes,1);
 
-    
-    dlmwrite([temp_save_location '/curr_rep_ind.txt'],[1:1:(ReplicasRequired*20)]');
-    dlmwrite([temp_save_location '/curr_rep_data.txt'],[[1:1:(ReplicasRequired*20)]',ones(ReplicasRequired*20,1)],'precision','%10.5e');
-unix(['rm -rf ' temp_save_location '/tempout_*.txt']);
 
-    unix([ ' > ' temp_save_location '/curr_out_rep_' num2str(1) '.txt']);
-unix([ ' > ' temp_save_location '/finished.txt']);
-
-    iters = floor(ReplicasRequired*20/bash_clump);
-
-    temp= regexp(fileread('sub_BNG_MISAEx_init.sh'),'\n','split');
-    temp{17} = sprintf('OUT_NUM="%d"',1);
-    temp{18} = sprintf('TMP="%s"',temp_save_location);
-    temp{19} = sprintf('TSTEP="%f"',timestep);
-    temp{21} = sprintf('PREV_ID="%d"',0);
-    temp{22} = sprintf('NEW_ID="%d"',0);
-    temp{24} = sprintf('STOP="%d"',bash_clump);
-    temp{32} = sprintf('#$ -t 1-%d',iters);
-    
-    
-    
-    
-    
-    fid = fopen(['sub_BNG_scripts.sh'],'w');
-    fprintf(fid,'%s \n',temp{:});
-    fclose(fid);
-    
-    unix(['qsub sub_BNG_scripts.sh']);
-     [~,Is_done] = unix(['wc -l < finished.txt']);
-
-  while str2num(Is_done) < iters
-     pause(10)
-     [~,Is_done] = unix(['wc -l < finished.txt']);
-     disp(str2num(Is_done));
-  end
-
-
-
-
-unix(['cat ' temp_save_location '/tempout_*.txt >> ' temp_save_location '/curr_out_rep_' num2str(1) '.txt']);
-unix(['rm -rf ' temp_save_location '/finished.txt']);
-
-
-   
-
-    replicas_forwards = load(['curr_out_rep_' num2str(1) '.txt']);
+    replicas_forwards = load(['curr_out_rep_' num2str(rstart) '.txt']);
     [~,sortind,~] = unique(replicas_forwards(:,end-1));
     replicas_forwards = [replicas_forwards(sortind,2:end)];
 
 replicas_forwards(:,end) = replicas_forwards(:,end)./sum(replicas_forwards(:,end));
     
 
-
-    
-    newVoronoi = zeros(num_nodes,species);
-    new_ind_voronoi = randsample(length(replicas_forwards(:,1)),1);
-    newVoronoi(1,:) = replicas_forwards(new_ind_voronoi,1:species);
-    for i = 2:num_nodes
-        [~,Distances] = knnsearch(newVoronoi(1:i-1,:),replicas_forwards(:,1:species));
-        [~,idxmax] = max(Distances);
-        newVoronoi(i,:) = replicas_forwards(idxmax,1:species);
-    end
-    
-    %
-    VoronoiLocs = newVoronoi;
-    
-    Binsprev = knnsearch(VoronoiLocs,replicas_forwards(:,1:species));
-    
-    
-    replicas_forwards = WEstep_051117(replicas_forwards,VoronoiLocs,ReplicasRequired,Binsprev);
-curr_iteration = 0;
 iteration = curr_iteration + 1;
 if iteration > 3
 iteration = 0;
 end
-
 if rstart+1 < vorloops
 for ijk = rstart+1:vorloops
     

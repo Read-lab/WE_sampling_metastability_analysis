@@ -6,28 +6,28 @@
 #$ -cwd
 #$ -j y   
 # RESTART_EMAIL_SUMMARY
-#$ -l mem_free=0.1G                  
+#$ -l h=!compute-1-10&!compute-11-10&!compute-8-15               #current buggy compute nodes 
 module load gmp/5.1.3   
 module load mpc/1.0.1 mpfr/3.1.2   
 module load Cluster_Defaults   
 module load binutils/2.23.2   
 module load gdb/7.8   
 module load openmpi-1.8.3/gcc-4.8.2   
-module load gcc/4.8.2   
-OUT_NUM="0" 
-TMP="/scratch/tsem1/TEMP_F10_NEW"
-TSTEP="5.000000" 
-NUMSIMSTEPS="2"   
-PREV_ID="0" 
-NEW_ID="1" 
-START="1"
-STOP="30"
+module load gcc/4.8.2   #ONE OF THESE MODULES IS NECESSARY FOR BNG. NOT SURE WHICH
+OUT_NUM="0"  #current WE iteration
+TMP="/scratch/tsem1/TEMP_F10_NEW" #output location
+TSTEP="5.000000" #tau/2
+NUMSIMSTEPS="2" #necessary temp variable
+PREV_ID="0" #current replica tag
+NEW_ID="1" #new replica tag
+START="1" 
+STOP="30" #batch variable
+PREV_FILE="MISA_Ex_D.net"   #name of the compiled bng file to simulate
 
-#mkdir -p ${TMP}/stage
-#cp ${TMP}/curr_rep_ind.txt ${TMP}/stage/
-#cp ${TMP}/curr_rep_data.txt ${TMP}/stage/
-#cp ${TMP}/run_network ${TMP}/stage/
-#cd ${TMP}/stage
+
+
+
+
 
 #$ -t 1-1000 
 > ${TMP}/tempout_${SGE_TASK_ID}.txt
@@ -35,7 +35,7 @@ for i in $(seq ${START} ${STOP});
   do
 	CURRLINE="$(($((${STOP}*$((${SGE_TASK_ID}-1))))+${i}))"
 	FILENAME="$(sed "${CURRLINE}q;d" curr_rep_ind.txt)"   
-	PREV_FILE="MISA_Ex_D.net"   
+
 	output5="${TMP}/t${NEW_ID}/newsim_${CURRLINE}"    
 	${TMP}/run_network -o ${output5} -e -p ssa -h $RANDOM --cdat 0 -g $PREV_FILE $PREV_FILE $TSTEP $NUMSIMSTEPS &
 	wait     

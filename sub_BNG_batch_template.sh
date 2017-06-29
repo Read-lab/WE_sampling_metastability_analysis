@@ -6,15 +6,15 @@
 #$ -cwd
 #$ -j y   
 # RESTART_EMAIL_SUMMARY
-#$ -l h=!compute-1-10&!compute-11-10&!compute-8-15               
+#$ -l h=!compute-1-10&!compute-11-10&!compute-8-15      #current buggy compute nodes         
 module load gmp/5.1.3   
 module load mpc/1.0.1 mpfr/3.1.2   
 module load Cluster_Defaults   
 module load binutils/2.23.2   
 module load gdb/7.8   
 module load openmpi-1.8.3/gcc-4.8.2   
-module load gcc/4.8.2   
-OUT_NUM="0" 
+module load gcc/4.8.2   #ONE OF THESE MODULES IS NECESSARY FOR BNG. NOT SURE WHICH
+OUT_NUM="0" #CURRENT 
 TMP="/scratch/tsem1/TEMP_F10_NEW"
 TSTEP="5.000000" 
 NUMSIMSTEPS="2"   
@@ -23,11 +23,11 @@ NEW_ID="1"
 START="1"
 STOP="30"
 
-#mkdir -p ${TMP}/stage
-#cp ${TMP}/curr_rep_ind.txt ${TMP}/stage/
-#cp ${TMP}/curr_rep_data.txt ${TMP}/stage/
-#cp ${TMP}/run_network ${TMP}/stage/
-#cd ${TMP}/stage
+
+
+
+
+
 
 #$ -t 1-1000 
 > ${TMP}/tempout_${SGE_TASK_ID}.txt
